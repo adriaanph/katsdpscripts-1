@@ -74,7 +74,7 @@ def reduce_compscan_inf(h5 ,channel_mask = None,chunks=16,return_raw=False):
         for scan in h5.scans() : 
              valid_index = activity(h5,state = 'track')
              data = h5.vis[valid_index]
-            if data.shape[0] > 0 : # need at least one data point
+             if data.shape[0] > 0 : # need at least one data point
                 gains_p[pol].append(calprocs.g_fit(data[:,:,:].mean(axis=0),h5.bls_lookup,refant=0) )
                 stdv[pol].append(np.ones((data.shape[0],data.shape[1],len(h5.ants))).sum(axis=0))#number of data points
                 # Get coords in (x(time,ants),y(time,ants) coords) 
@@ -208,7 +208,7 @@ output_fields = '%(dataset)s, %(target)s, %(timestamp_ut)s, %(azimuth).7f, %(ele
 
 output_field_names = [name.partition(')')[0] for name in output_fields[2:].split(', %(')]
 
-h5 = katdal.open(args)  # THis is an old KAT-7 file with no fringestopping
+h5 = katdal.open(args[0])  # THis is an old KAT-7 file with no fringestopping
 h5.select(compscans='interferometric_pointing')
 h5.antlist = [a.name for a in h5.ants]
 h5.bls_lookup = calprocs.get_bls_lookup(h5.antlist,h5.corr_products)
