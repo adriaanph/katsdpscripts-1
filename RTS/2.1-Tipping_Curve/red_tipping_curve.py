@@ -110,7 +110,7 @@ class Spill_Temp:
             freq_list = np.array(())
             data_list = np.array(())
             elevation_list = np.r_[elevation_list,elevation]
-            freq_list = np.r_[freq_list,np.ones_like(elevation)*800.0] ## Hard code the lower limit to avoid nans
+            freq_list = np.r_[freq_list,np.ones_like(elevation)*1.0] ## Hard code the lower limit to avoid nans
             data_list = np.r_[data_list,datafile[1:,1+0*2]]
             for x in range(numfreqs):
                 elevation_list = np.r_[elevation_list,elevation]
@@ -124,7 +124,7 @@ class Spill_Temp:
             freq_list = np.array(())
             data_list = np.array(())
             elevation_list = np.r_[elevation_list,elevation]
-            freq_list = np.r_[freq_list,np.ones_like(elevation)*800.0]  ## Hard code the lower limit to avoid nans
+            freq_list = np.r_[freq_list,np.ones_like(elevation)*1.0]  ## Hard code the lower limit to avoid nans
             data_list = np.r_[data_list,datafile[1:,1+0*2+1]]
             for x in range(numfreqs):
                 elevation_list = np.r_[elevation_list,elevation]
@@ -138,8 +138,8 @@ class Spill_Temp:
             #print self.spill['HH']((90.-elevation_list,freq_list))
 
         except IOError:
-            spillover_H = np.array([[0.,90.,0.,90.],[0.,0.,0.,0.],[900.,900.,2000.,2000.]])
-            spillover_V = np.array([[0.,90.,0.,90.],[0.,0.,0.,0.],[900.,900.,2000.,2000.]])
+            spillover_H = np.array([[0.,90.,0.,90.],[0.,0.,0.,0.],[1.,1.,2000.,2000.]])
+            spillover_V = np.array([[0.,90.,0.,90.],[0.,0.,0.,0.],[1.,1.,2000.,2000.]])
             spillover_H[0]= 90-spillover_H[0]
             spillover_V[0]= 90-spillover_V[0]
             T_H = fit.Delaunay2DScatterFit()
@@ -174,21 +174,21 @@ class aperture_efficiency_models:
         try:
             aperture_eff_h = np.loadtxt(filenameH,comments='#')# Change units to fraction
             a800 = np.zeros((aperture_eff_h.shape[0]+2,2))
-            a800[0,:] = [800,aperture_eff_h[0,1]]
+            a800[0,:] = [1,aperture_eff_h[0,1]]
             a800[1:-1,:] = aperture_eff_h
             a800[-1,:] = [2000,aperture_eff_h[-1,1]]
             aperture_eff_h = a800
 
             aperture_eff_v = np.loadtxt(filenameV,comments='#')# Change units to fraction
             a800 = np.zeros((aperture_eff_v.shape[0]+2,2))
-            a800[0,:] = [800,aperture_eff_v[0,1]]
+            a800[0,:] = [1,aperture_eff_v[0,1]]
             a800[1:-1,:] = aperture_eff_v
             a800[-1,:] = [2000,aperture_eff_v[-1,1]]
             aperture_eff_v = a800
 
         except IOError:
-            aperture_eff_h = np.array([[800.,2000],[75.,75.]])
-            aperture_eff_v = np.array([[800.,2000],[75.,75.]])
+            aperture_eff_h = np.array([[1.,2000],[75.,75.]])
+            aperture_eff_v = np.array([[1.,2000],[75.,75.]])
             warnings.warn('Warning: Failed to load aperture_efficiency models, setting models to 0.75 ')
             print('Warning: Failed to load aperture_efficiency models, setting models to 0.75 ')
         #Assume  Provided models are a function of zenith angle & frequency
@@ -219,17 +219,17 @@ class Rec_Temp:
         try:
             receiver_h = (np.loadtxt(filenameH,comments='%',delimiter=',')[:,[0,2] ]/(1e6,1.)).T # Change units to MHz # discard the gain col
             a800 = np.zeros((2,np.shape(receiver_h)[-1]+1))
-            a800[:,0] = [800,receiver_h[1,0]]
+            a800[:,0] = [1,receiver_h[1,0]]
             a800[:,1:] = receiver_h
             receiver_h = a800
             receiver_v = (np.loadtxt(filenameV,comments='%',delimiter=',')[:,[0,2] ]/(1e6,1.)).T # Change units to MHz  # discard the gain col
             a800 = np.zeros((2,np.shape(receiver_v)[-1]+1))
-            a800[:,0] = [800,receiver_v[1,0]]
+            a800[:,0] = [1,receiver_v[1,0]]
             a800[:,1:] = receiver_v
             receiver_v = a800
         except IOError:
-            receiver_h = np.array([[800.,2000],[20.,20.]])
-            receiver_v = np.array([[800.,2000],[20.,20.]])
+            receiver_h = np.array([[1.,2000],[20.,20.]])
+            receiver_v = np.array([[1.,2000],[20.,20.]])
             warnings.warn('Warning: Failed to load Receiver models, setting models to 20 K ')
             print('Warning: Failed to load Receiver models, setting models to 20 K ')
         #Assume  Provided models are a function of zenith angle & frequency
@@ -311,7 +311,7 @@ def load_cal(filename, baseline, nd_models, freq_channel=None,channel_bw=10.0,ch
     try:
         d = scape.DataSet(filename, baseline=baseline, nd_models=nd_models,band=band_input)
     except IOError:
-        nd = scape.gaincal.NoiseDiodeModel(freq=[800,2000],temp=[20,20])
+        nd = scape.gaincal.NoiseDiodeModel(freq=[1,2000],temp=[20,20])
         warnings.warn('Warning: Failed to load/find Noise Diode Models, setting models to 20K ')
         print('Warning: Failed to load/find Noise Diode Models, setting models to 20K ')
         d = scape.DataSet(filename, baseline=baseline,  nd_h_model = nd, nd_v_model=nd ,band=band_input)
@@ -584,7 +584,7 @@ def find_nearest(array,value):
 select_freq= np.array(opts.select_freq.split(','),dtype=float)
 select_el = np.array(opts.select_el.split(','),dtype=float)
 h5 = katdal.open(args[0])
-h5.select(scans='track')
+h5.select(scans='track',centre_freq='428e6')
 nd_models = opts.nd_models
 spill_over_models =  opts.spill_over_models
 filename = args[0]
