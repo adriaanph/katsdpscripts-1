@@ -45,20 +45,22 @@ def analyze(h5, ant, t_spike_start, t_spike_end):
     p_hv = np.abs(h5.vis[:,:,[i for i,x in enumerate(h5.corr_products) if x[0][-1]!=x[1][-1]][0]].squeeze())
 
     # Plots to identify RFI-free bits of spectrum
-    figure(figsize=(16,8)); suptitle("%s: %s"%(h5.file.filename, ant))
+    plt.figure(figsize=(16,8));
+    plt.suptitle("%s: %s"%(h5.file.filename, ant))
 
-    subplot(2,1,1) # H & V sigma/mu spectra
-    plot(h5.channels, np.std(p_h,axis=0)/np.mean(p_h,axis=0))
-    plot(h5.channels, np.std(p_v,axis=0)/np.mean(p_v,axis=0))
+    plt.subplot(2,1,1) # H & V sigma/mu spectra
+    plt.plot(h5.channels, np.std(p_h,axis=0)/np.mean(p_h,axis=0))
+    plt.plot(h5.channels, np.std(p_v,axis=0)/np.mean(p_v,axis=0))
     K = 1/np.sqrt(h5.channel_width*dt) # Expected radiometer scatter
-    ylim(K/2.,3*K)
-    ylabel(r"$\sigma/\mu$ []"); title("Complete spectrum")
+    plt.ylim(K/2.,3*K)
+    plt.ylabel(r"$\sigma/\mu$ []")
+    plt.title("Complete spectrum")
 
-    subplot(2,1,2) # HV power
-    plot(h5.channels, 10*np.log10(np.mean(p_hv,axis=0)))
-    ylabel(r"HV [dB]")
+    plt.subplot(2,1,2) # HV power
+    plt.plot(h5.channels, 10*np.log10(np.mean(p_hv,axis=0)))
+    plt.ylabel(r"HV [dB]")
 
-    xlabel("Frequency [channel #]");
+    plt.xlabel("Frequency [channel #]");
 
     # Identify pristine chunks of spectrum e.g. from the above
     M = int(10/dt) # Minimum = 20/dt MHz to beat system noise
@@ -78,31 +80,39 @@ def analyze(h5, ant, t_spike_start, t_spike_end):
     ch_chunks = np.asarray(ch_chunks)[snr_flags*hv_flags]
     print(ch_chunks)
     
-    figure(figsize=(16,8)); suptitle("%s: %s"%(h5.file.filename, ant))
-    subplot(2,1,1) # H & V sigma/mu spectra
+    plt.figure(figsize=(16,8))
+    plt.suptitle("%s: %s"%(h5.file.filename, ant))
+    plt.subplot(2,1,1) # H & V sigma/mu spectra
     for ch in ch_chunks:
-        plot(h5.channels[ch], np.std(p_h[:,ch],axis=0)/np.mean(p_h[:,ch],axis=0))
-        plot(h5.channels[ch], np.std(p_v[:,ch],axis=0)/np.mean(p_v[:,ch],axis=0))
-    plot(h5.channels,K+0*h5.channels,'k,'); ylim(K/2.,3*K)
-    ylabel(r"$\sigma/\mu$ []"); title("Pristine spectrum")
+        plt.plot(h5.channels[ch], np.std(p_h[:,ch],axis=0)/np.mean(p_h[:,ch],axis=0))
+        plt.plot(h5.channels[ch], np.std(p_v[:,ch],axis=0)/np.mean(p_v[:,ch],axis=0))
+    plt.plot(h5.channels,K+0*h5.channels,'k,')
+    plt.ylim(K/2.,3*K)
+    plt.ylabel(r"$\sigma/\mu$ []")
+    plt.title("Pristine spectrum")
 
-    subplot(2,1,2) # HV power
+    plt.subplot(2,1,2) # HV power
     for ch in ch_chunks:
-        plot(h5.channels[ch], 10*np.log10(np.mean(p_hv[:,ch],axis=0)))
-    plot(h5.channels,K+0*h5.channels,'k,');
-    ylabel(r"HV [dB]")
+        plt.plot(h5.channels[ch], 10*np.log10(np.mean(p_hv[:,ch],axis=0)))
+    plt.plot(h5.channels,K+0*h5.channels,'k,');
+    plt.ylabel(r"HV [dB]")
 
-    xlabel("Frequency [channel #]"); 
+    plt.xlabel("Frequency [channel #]"); 
 
     # Time series H & V
-    figure(figsize=(16,8)); suptitle("%s: %s"%(h5.file.filename, ant))
+    plt.figure(figsize=(16,8))
+    plt.suptitle("%s: %s"%(h5.file.filename, ant))
     for ch in ch_chunks:
-        subplot(2,1,1); plot(t, np.mean(p_h[:,ch],axis=1)/np.mean(p_h[:,ch]))
-    xlabel("time [sec]"); ylabel(r"$\delta P/P$ [linear]")
+        plt.subplot(2,1,1)
+        plt.plot(t, np.mean(p_h[:,ch],axis=1)/np.mean(p_h[:,ch]))
+    plt.xlabel("time [sec]")
+    plt.ylabel(r"$\delta P/P$ [linear]")
 
     for ch in ch_chunks:
-        subplot(2,1,2); plot(t, np.mean(p_v[:,ch],axis=1)/np.mean(p_v[:,ch]))
-    xlabel("time [sec]"); ylabel(r"$\delta P/P$ [linear]");
+        plt.subplot(2,1,2)
+        plt.plot(t, np.mean(p_v[:,ch],axis=1)/np.mean(p_v[:,ch]))
+    plt.xlabel("time [sec]")
+    plt.ylabel(r"$\delta P/P$ [linear]");
     
     # Generate the flags for spikes in time series
     t_A, t_B = None, None # Flags identifying the clean & spike windows respectively
@@ -118,20 +128,24 @@ def analyze(h5, ant, t_spike_start, t_spike_end):
     # Debug in case time-domain spikes are noticed
     if t_A is not None and t_B is not None:
         # Time domain
-        figure(figsize=(16,8)); suptitle("%s: %s"%(h5.file.filename, ant))
+        plt.figure(figsize=(16,8))
+        plt.suptitle("%s: %s"%(h5.file.filename, ant))
         for ch in ch_chunks:
-            plot(t[t_A], (np.mean(p_h[:,ch],axis=1)/np.mean(p_h[:,ch]))[t_A])
-            plot(t[t_A], (np.mean(p_v[:,ch],axis=1)/np.mean(p_v[:,ch]))[t_A])
-            plot(t[t_B], (np.mean(p_h[:,ch],axis=1)/np.mean(p_h[:,ch]))[t_B])
-            plot(t[t_B], (np.mean(p_v[:,ch],axis=1)/np.mean(p_v[:,ch]))[t_B])
-        xlabel("time [sec]"); ylabel(r"$\delta P/P$ []")
+            plt.plot(t[t_A], (np.mean(p_h[:,ch],axis=1)/np.mean(p_h[:,ch]))[t_A])
+            plt.plot(t[t_A], (np.mean(p_v[:,ch],axis=1)/np.mean(p_v[:,ch]))[t_A])
+            plt.plot(t[t_B], (np.mean(p_h[:,ch],axis=1)/np.mean(p_h[:,ch]))[t_B])
+            plt.plot(t[t_B], (np.mean(p_v[:,ch],axis=1)/np.mean(p_v[:,ch]))[t_B])
+        plt.xlabel("time [sec]")
+        plt.ylabel(r"$\delta P/P$ []")
 
         # Spectral domain
-        figure(figsize=(16,8)); suptitle("%s: %s"%(h5.file.filename, ant))
-        plot(h5.channels, 10*np.log10(np.mean(p_h[t_B,:].squeeze(),axis=0) / np.mean(p_h[t_A,:].squeeze(),axis=0)))
-        plot(h5.channels, 10*np.log10(np.mean(p_v[t_B,:].squeeze(),axis=0) / np.mean(p_v[t_A,:].squeeze(),axis=0)))
-        ylim(-0.1,0.1)
-        xlabel("Frequency [channel #]"); ylabel("P(spike)/P(nospike) [dB#]")
+        plt.figure(figsize=(16,8))
+        plt.suptitle("%s: %s"%(h5.file.filename, ant))
+        plt.plot(h5.channels, 10*np.log10(np.mean(p_h[t_B,:].squeeze(),axis=0) / np.mean(p_h[t_A,:].squeeze(),axis=0)))
+        plt.plot(h5.channels, 10*np.log10(np.mean(p_v[t_B,:].squeeze(),axis=0) / np.mean(p_v[t_A,:].squeeze(),axis=0)))
+        plt.ylim(-0.1,0.1)
+        plt.xlabel("Frequency [channel #]")
+        plt.ylabel("P(spike)/P(nospike) [dB#]")
   
     # Only use the data from start up to just before the spike
     if t_A is not None and t_B is not None:
@@ -147,75 +161,85 @@ def analyze(h5, ant, t_spike_start, t_spike_end):
             p_v = p_v[t_Z:,:]
 
     # PSD of individual channel chunks
-    figure(figsize=(12,8)); suptitle("%s: %s"%(h5.file.filename, ant))
+    plt.figure(figsize=(12,8))
+    plt.suptitle("%s: %s"%(h5.file.filename, ant))
     for ch in ch_chunks:
-        subplot(2,1,1); psd(np.mean(p_h[:,ch],axis=1)-np.mean(p_h[:,ch]), Fs=1/dt, NFFT=len(t))
+        plt.subplot(2,1,1)
+        plt.psd(np.mean(p_h[:,ch],axis=1)-np.mean(p_h[:,ch]), Fs=1/dt, NFFT=len(t))
 
     for ch in ch_chunks:
-        subplot(2,1,2); psd(np.mean(p_v[:,ch],axis=1)-np.mean(p_v[:,ch]), Fs=1/dt, NFFT=len(t))
+        plt.subplot(2,1,2)
+        plt.psd(np.mean(p_v[:,ch],axis=1)-np.mean(p_v[:,ch]), Fs=1/dt, NFFT=len(t))
 
     # All good channels combined
-    figure(figsize=(12,6)); suptitle("%s: %s"%(h5.file.filename, ant))
+    plt.figure(figsize=(12,6))
+    plt.suptitle("%s: %s"%(h5.file.filename, ant))
     P_h=np.take(p_h,ch_chunks,axis=1).reshape(len(t),np.prod(ch_chunks.shape))
-    psd(np.mean(P_h,axis=1)-np.mean(P_h), Fs=1/dt, NFFT=len(t))
+    plt.psd(np.mean(P_h,axis=1)-np.mean(P_h), Fs=1/dt, NFFT=len(t))
     P_v=np.take(p_v,ch_chunks,axis=1).reshape(len(t),np.prod(ch_chunks.shape))
-    psd(np.mean(P_v,axis=1)-np.mean(P_v), Fs=1/dt, NFFT=len(t));       
+    plt.psd(np.mean(P_v,axis=1)-np.mean(P_v), Fs=1/dt, NFFT=len(t));       
 
     # Measurements in each identified good channel chunk individually
-    figure(figsize=(12,20)); suptitle("%s: %s"%(h5.file.filename, ant))
+    plt.figure(figsize=(12,20))
+    plt.suptitle("%s: %s"%(h5.file.filename, ant))
     for i,(pol,p_t) in enumerate([("H",p_h), ("V",p_v)]):
         for ch in ch_chunks:
             p_tch = np.mean(p_t[:,ch],axis=1)/np.mean(p_t[:,ch])
-            subplot(4,1,2*i+1); plot(t, p_tch,'+', t, fit_avg(p_tch,5/dt), '.'); ylabel("Sampled power [linear]")
-            title("%s:%s %s pol @ %.f Hz"%(ant,h5.receivers[ant],pol,rate))
-            subplot(4,1,2*i+2); plot(t, 100*sliding_rms(p_tch,5/dt), label="ch ~%.f"%ch.mean());  ylabel("RMS over 5 sec [%]")
-            plot(t, 0.10+0*t, 'k--') # Spec limit
-        legend()
-        ylim(0,0.15)
-    xlabel("time [sec]");
+            plt.subplot(4,1,2*i+1)
+            plt.plot(t, p_tch,'+', t, fit_avg(p_tch,5/dt), '.')
+            plt.ylabel("Sampled power [linear]")
+            plt.title("%s:%s %s pol @ %.f Hz"%(ant,h5.receivers[ant],pol,rate))
+            plt.subplot(4,1,2*i+2)
+            plt.plot(t, 100*sliding_rms(p_tch,5/dt), label="ch ~%.f"%ch.mean());  plt.ylabel("RMS over 5 sec [%]")
+            plt.plot(t, 0.10+0*t, 'k--') # Spec limit
+        plt.legend()
+        plt.ylim(0,0.15)
+    plt.xlabel("time [sec]");
 
     # Measurements combined over all identified good channel chunks
-    figure(figsize=(12,20)); suptitle("%s: %s"%(h5.file.filename, ant))
+    plt.figure(figsize=(12,20))
+    plt.suptitle("%s: %s"%(h5.file.filename, ant))
     for i,(pol,p_t) in enumerate([("H",P_h), ("V",P_v)]):
         p_t = np.mean(p_t,axis=1)/np.mean(p_t)
-        subplot(4,1,2*i+1); plot(t, p_t,'+', t, fit_avg(p_t,5/dt), '.'); ylabel("Sampled power [linear]")
+        plt.subplot(4,1,2*i+1)
+        plt.plot(t, p_t,'+', t, fit_avg(p_t,5/dt), '.')
+        plt.ylabel("Sampled power [linear]")
         result = 100*sliding_rms(p_t,5/dt)
-        title("%s:%s %s pol @ %.1f Hz: 95th pct %.3f%%"%(ant,h5.receivers[ant],pol,rate,np.percentile(result,95)))
-        subplot(4,1,2*i+2); plot(t, result);  ylabel("RMS over 5 sec [%]")
-        plot(t, 0.10+0*t, 'k--') # Spec limit
-        ylim(0,0.15)
-    xlabel("time [sec]");
+        plt.title("%s:%s %s pol @ %.1f Hz: 95th pct %.3f%%"%(ant,h5.receivers[ant],pol,rate,np.percentile(result,95)))
+        plt.subplot(4,1,2*i+2)
+        plt.plot(t, result);  plt.ylabel("RMS over 5 sec [%]")
+        plt.plot(t, 0.10+0*t, 'k--') # Spec limit
+        plt.ylim(0,0.15)
+    plt.xlabel("time [sec]");
 
 
-################################################# Command Line Interface #################################################
-if __name__ == "__main__":
-    import optparse
-    # Parse command-line opts and arguments
-    parser = optparse.OptionParser(usage="%prog [opts] <HDF5 file>",
-                                   description="This processes an HDF5 dataset and generates figures.")
-    parser.add_option("--ant", type='string', default=None,
-                      help="Specific antenna to run analysis for (default = %default)")
-    parser.add_option("--spike-start", type='float', default=None,
-                      help="Start of spike in time series to be omitted, in seconds (default = %default)")
-    parser.add_option("--spike-end", type='float', default=None,
-                      help="End of spike in time series to be omitted, in seconds (default = %default)")
+import optparse
+# Parse command-line opts and arguments
+parser = optparse.OptionParser(usage="%prog [opts] <HDF5 file>",
+                               description="This processes an HDF5 dataset and generates figures.")
+parser.add_option("--ant", type='string', default=None,
+                  help="Specific antenna to run analysis for (default = %default)")
+parser.add_option("--spike-start", type='float', default=None,
+                  help="Start of spike in time series to be omitted, in seconds (default = %default)")
+parser.add_option("--spike-end", type='float', default=None,
+                  help="End of spike in time series to be omitted, in seconds (default = %default)")
 
-    (opts, args) = parser.parse_args()
-    if len(args) != 1 or not args[0].endswith('.h5'):
-        raise RuntimeError('Please specify a single HDF5 file as argument to the script')
+(opts, args) = parser.parse_args()
+if len(args) != 1 or not args[0].endswith('.h5'):
+    raise RuntimeError('Please specify a single HDF5 file as argument to the script')
 
-    filename = args[0]
-    ant = opts.ant
-    t_spike_start, t_spike_end = opts.spike_start, opts.spike_end
-    
-    h5 = katdal.open(filename)
-    #print(h5)
-    #print(h5.receivers)
-    if ant:
-        analyze(h5, ant, t_spike_start, t_spike_end)
-    else:
-        for ant in h5.ants:
-            analyze(h5, ant.name, t_spike_start, t_spike_end)
-    #plt.show()
+filename = args[0]
+ant = opts.ant
+t_spike_start, t_spike_end = opts.spike_start, opts.spike_end
+
+h5 = katdal.open(filename)
+#print(h5)
+#print(h5.receivers)
+if ant:
+    analyze(h5, ant, t_spike_start, t_spike_end)
+else:
+    for ant in h5.ants:
+        analyze(h5, ant.name, t_spike_start, t_spike_end)
+#plt.show()
 
 
