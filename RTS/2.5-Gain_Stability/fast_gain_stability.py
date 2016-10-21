@@ -25,6 +25,36 @@ def fit_avg(x, win_length):
         results[i:i+W] = np.ones(W)*np.average(x[i:i+W])
     return np.asarray(results)
 
+
+def combined_Measurements(P_h,P_v,t,title,dt=1 ):
+    # Measurements combined over all identified good channel chunks
+    fig =plt.figure(figsize=(12,20))
+    plt.suptitle(title)
+    rate = 1./dt
+    for i,(pol,p_t) in enumerate([("H",P_h), ("V",P_v)]):
+        p_t = np.mean(p_t,axis=1)/np.mean(p_t)
+        plt.subplot(4,1,2*i+1)
+        plt.plot(t, p_t,'+', t, fit_avg(p_t,5/dt), '.')
+        plt.ylabel("Sampled power [linear]")
+        result = 100*sliding_rms(p_t,5/dt)
+        plt.title("%s %s pol @ %.1f Hz: 95th pct %.3f%%"%(title,pol,rate,np.percentile(result,95)))
+        plt.subplot(4,1,2*i+2)
+        plt.plot(t, result)
+        plt.ylabel("RMS over 5 sec [%]")
+        plt.plot(t, 0.10+0*t, 'k--') # Spec limit
+        plt.ylim(0,0.15)
+    plt.xlabel("time [sec]")
+    return fig 
+
+def plot_psd(title,P_h,P_v,t,dt=1 ):
+# All good channels combined
+    fig = plt.figure(figsize=(12,6))
+    plt.suptitle(title)
+    plt.psd(np.mean(P_h,axis=1)-np.mean(P_h), Fs=1/dt, NFFT=len(t))
+    plt.psd(np.mean(P_v,axis=1)-np.mean(P_v), Fs=1/dt, NFFT=len(t))
+    return fig    
+
+
 def analyze(h5, ant, t_spike_start, t_spike_end):
     """
         @param t_spike_start, t_spike_end: start & end times of noisy time series to be excluded from analysis, in [sec]
@@ -71,14 +101,14 @@ def analyze(h5, ant, t_spike_start, t_spike_end):
     snr = 1/2**.5 * np.sqrt(np.asarray(snr_h)**2+np.asarray(snr_v)**2) # Average over frequency
 
     snr_flags = snr<1.05*K # at most 5% more than expected
-    print(snr[snr_flags])
+    #print(snr[snr_flags])
     
     hv = np.asarray([np.std(p_hv[:,C]/np.std(p_hv[:,C],axis=0))-1 for C in ch_chunks])
-    print(hv[snr_flags])
+    #print(hv[snr_flags])
     hv_flags = hv<10*np.percentile(hv,10) # grossly unstable compared to the typical best
 
     ch_chunks = np.asarray(ch_chunks)[snr_flags*hv_flags]
-    print(ch_chunks)
+    #print(ch_chunks)
     
     plt.figure(figsize=(16,8))
     plt.suptitle("%s: %s"%(h5.file.filename, ant))
@@ -171,46 +201,30 @@ def analyze(h5, ant, t_spike_start, t_spike_end):
         plt.subplot(2,1,2)
         plt.psd(np.mean(p_v[:,ch],axis=1)-np.mean(p_v[:,ch]), Fs=1/dt, NFFT=len(t))
 
-    # All good channels combined
-    plt.figure(figsize=(12,6))
-    plt.suptitle("%s: %s"%(h5.file.filename, ant))
-    P_h=np.take(p_h,ch_chunks,axis=1).reshape(len(t),np.prod(ch_chunks.shape))
-    plt.psd(np.mean(P_h,axis=1)-np.mean(P_h), Fs=1/dt, NFFT=len(t))
-    P_v=np.take(p_v,ch_chunks,axis=1).reshape(len(t),np.prod(ch_chunks.shape))
-    plt.psd(np.mean(P_v,axis=1)-np.mean(P_v), Fs=1/dt, NFFT=len(t));       
-
+    
     # Measurements in each identified good channel chunk individually
-    plt.figure(figsize=(12,20))
-    plt.suptitle("%s: %s"%(h5.file.filename, ant))
-    for i,(pol,p_t) in enumerate([("H",p_h), ("V",p_v)]):
-        for ch in ch_chunks:
-            p_tch = np.mean(p_t[:,ch],axis=1)/np.mean(p_t[:,ch])
-            plt.subplot(4,1,2*i+1)
-            plt.plot(t, p_tch,'+', t, fit_avg(p_tch,5/dt), '.')
-            plt.ylabel("Sampled power [linear]")
-            plt.title("%s:%s %s pol @ %.f Hz"%(ant,h5.receivers[ant],pol,rate))
-            plt.subplot(4,1,2*i+2)
-            plt.plot(t, 100*sliding_rms(p_tch,5/dt), label="ch ~%.f"%ch.mean());  plt.ylabel("RMS over 5 sec [%]")
-            plt.plot(t, 0.10+0*t, 'k--') # Spec limit
-        plt.legend()
-        plt.ylim(0,0.15)
-    plt.xlabel("time [sec]");
-
-    # Measurements combined over all identified good channel chunks
-    plt.figure(figsize=(12,20))
-    plt.suptitle("%s: %s"%(h5.file.filename, ant))
-    for i,(pol,p_t) in enumerate([("H",P_h), ("V",P_v)]):
-        p_t = np.mean(p_t,axis=1)/np.mean(p_t)
-        plt.subplot(4,1,2*i+1)
-        plt.plot(t, p_t,'+', t, fit_avg(p_t,5/dt), '.')
-        plt.ylabel("Sampled power [linear]")
-        result = 100*sliding_rms(p_t,5/dt)
-        plt.title("%s:%s %s pol @ %.1f Hz: 95th pct %.3f%%"%(ant,h5.receivers[ant],pol,rate,np.percentile(result,95)))
-        plt.subplot(4,1,2*i+2)
-        plt.plot(t, result);  plt.ylabel("RMS over 5 sec [%]")
-        plt.plot(t, 0.10+0*t, 'k--') # Spec limit
-        plt.ylim(0,0.15)
-    plt.xlabel("time [sec]");
+    #plt.figure(figsize=(12,20))
+    #plt.suptitle("%s: %s"%(h5.file.filename, ant))
+    #for i,(pol,p_t) in enumerate([("H",p_h), ("V",p_v)]):
+    #    for ch in ch_chunks:
+    #        p_tch = np.mean(p_t[:,ch],axis=1)/np.mean(p_t[:,ch])
+    #        plt.subplot(4,1,2*i+1)
+    #        plt.plot(t, p_tch,'+', t, fit_avg(p_tch,5/dt), '.')
+    #        plt.ylabel("Sampled power [linear]")
+    #        plt.title("%s:%s %s pol @ %.f Hz"%(ant,h5.receivers[ant],pol,rate))
+    #        plt.subplot(4,1,2*i+2)
+    #        plt.plot(t, 100*sliding_rms(p_tch,5/dt), label="ch ~%.f"%ch.mean());  plt.ylabel("RMS over 5 sec [%]")
+    #        plt.plot(t, 0.10+0*t, 'k--') # Spec limit
+    #    plt.legend()
+    #    plt.ylim(0,0.15)
+    #plt.xlabel("time [sec]")
+    
+    P_h=np.take(p_h,ch_chunks,axis=1).reshape(len(t),np.prod(ch_chunks.shape))
+    P_v=np.take(p_v,ch_chunks,axis=1).reshape(len(t),np.prod(ch_chunks.shape))
+    
+    subtitle="%s:%s  SN:%s"%(h5.file.filename.split('/')[-1], ant,h5.receivers[ant])  
+    plot_psd(title=subtitle,P_h=P_h,P_v=P_v,t= t , dt=dt)
+    combined_Measurements(title=subtitle,P_h=P_h,P_v=P_v,t= t , dt=dt)
 
 
 import optparse
